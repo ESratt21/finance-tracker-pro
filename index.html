@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#121212">
+    
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    
+    <title>VIP Financial Tracker - PRO</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root {
+            /* VIP Dark Mode Colors */
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --card-border: #2C2C2C;
+            --primary-accent: #E2B93B; /* Executive Gold */
+            --income-green: #00E676;
+            --expense-red: #FF5252;
+            --text-main: #FFFFFF;
+            --text-light: #A0A0A0;
+            --input-bg: #2A2A2A;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color); color: var(--text-main);
+            font-family: 'Inter', sans-serif; margin: 0; padding: 20px 15px;
+            display: flex; justify-content: center; min-height: 100vh;
+        }
+
+        /* --- شاشات الأمان --- */
+        .overlay-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px;
+        }
+        .overlay-screen h2 { color: var(--primary-accent); font-size: 28px; margin-bottom: 10px; font-weight: 700;}
+        .overlay-screen p { color: var(--text-light); margin-bottom: 30px; font-size: 14px; }
+        
+        .pin-input-container { display: flex; gap: 10px; margin-bottom: 20px; }
+        .pin-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--primary-accent); }
+        .pin-dot.filled { background-color: var(--primary-accent); }
+        
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 250px; }
+        .key-btn { width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--card-border); background-color: var(--card-bg); color: var(--text-main); font-size: 20px; cursor: pointer; font-family: 'Inter', sans-serif; transition: 0.2s;}
+        .key-btn:active { background-color: #333; }
+        
+        .text-btn { margin-top: 25px; font-size: 14px; cursor: pointer; text-decoration: underline; color: var(--text-light); }
+        .danger-link { color: var(--expense-red); margin-top: 15px; font-size: 12px; font-weight: 600; }
+
+        .security-box { display: none; flex-direction: column; width: 100%; max-width: 300px; gap: 15px; }
+        .security-box input { padding: 15px; border: 1px solid var(--card-border); background-color: var(--input-bg); color: white; border-radius: 8px; text-align: center; font-size: 14px; font-family: 'Inter', sans-serif;}
+        .security-box button { background-color: var(--primary-accent); color: #121212; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: 'Inter', sans-serif;}
+
+        /* --- تصميم الأداة --- */
+        .dashboard { background-color: var(--card-bg); width: 100%; max-width: 700px; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; border: 1px solid var(--card-border);}
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: var(--text-main); font-size: 30px; margin: 0; font-weight: 700; letter-spacing: -0.5px;}
+        
+        .settings-row { display: flex; justify-content: flex-end; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--card-border); padding-bottom: 20px;}
+        .settings-row button, .settings-row select { background-color: transparent; border: 1px solid var(--card-border); padding: 8px 15px; font-size: 12px; border-radius: 6px; cursor: pointer; color: var(--text-light); font-family: 'Inter', sans-serif; font-weight: 600; transition: 0.2s; outline: none;}
+        .settings-row button:hover, .settings-row select:hover { background-color: var(--input-bg); color: white;}
+        .settings-row select option { background-color: var(--card-bg); color: white; }
+
+        /* بطاقات الحسابات */
+        .balance-card { background: linear-gradient(135deg, #232526, #414345); border: 1px solid #444; color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);}
+        .balance-title { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: var(--primary-accent); margin-bottom: 5px; font-weight: 600;}
+        .balance-amount { font-size: 44px; font-weight: 700; margin: 0; letter-spacing: -1px;}
+
+        .summary-row { display: flex; gap: 15px; margin-bottom: 30px; }
+        .summary-box { flex: 1; background-color: var(--input-bg); padding: 20px; border-radius: 10px; border: 1px solid var(--card-border); text-align: center;}
+        .summary-box.income .amount { color: var(--income-green); }
+        .summary-box.expense .amount { color: var(--expense-red); }
+        .summary-box .title { font-size: 11px; text-transform: uppercase; color: var(--text-light); margin-bottom: 5px; font-weight: 600; letter-spacing: 1px;}
+        .summary-box .amount { font-size: 22px; font-weight: 700; }
+
+        /* الإدخال */
+        .controls { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap;}
+        .controls input, .controls select { 
+            padding: 15px; border: 1px solid var(--card-border); background-color: var(--input-bg); color: var(--text-main);
+            border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; flex: 1; min-width: 120px;
+        }
+        /* لون أيقونة النتيجة (التقويم) في الدارك مود */
+        ::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer;}
+        
+        .controls input:focus, .controls select:focus { border-color: var(--primary-accent); }
+        .add-btn { background-color: var(--primary-accent); color: #121212; border: none; padding: 15px 25px; cursor: pointer; border-radius: 8px; font-weight: 700; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 1px;}
+
+        /* القائمة */
+        .transaction-list { list-style: none; padding: 0; margin: 0 0 30px 0; max-height: 300px; overflow-y: auto;}
+        .transaction-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--card-border); }
+        .transaction-info { display: flex; flex-direction: column; }
+        .t-name { font-weight: 600; font-size: 15px; color: var(--text-main);}
+        .t-date { font-size: 11px; color: var(--text-light); margin-top: 4px;}
+        .transaction-amount { display: flex; align-items: center; gap: 15px; font-weight: 700; font-size: 16px;}
+        .t-income { color: var(--income-green); }
+        .t-expense { color: var(--expense-red); }
+        .delete-btn { background: none; color: #555; border: none; font-size: 20px; cursor: pointer; transition: 0.2s;}
+        .delete-btn:hover { color: var(--expense-red); }
+
+        /* النوتة المالية */
+        .journal-container { margin-top: 20px; border-top: 1px solid var(--card-border); padding-top: 25px;}
+        .journal-container h3 { color: var(--primary-accent); font-size: 16px; margin-top: 0; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;}
+        .journal-area { 
+            width: 100%; height: 100px; padding: 15px; border: 1px solid var(--card-border); 
+            border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; 
+            outline: none; resize: vertical; background-color: var(--input-bg); color: var(--text-main);
+        }
+        .journal-area:focus { border-color: var(--primary-accent); }
+
+        @media screen and (max-width: 768px) {
+            .summary-row { flex-direction: column; gap: 10px; }
+            .controls { flex-direction: column; }
+            .controls input, .controls select, .add-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen" class="overlay-screen">
+        <div id="pin-section">
+            <h2 id="lock-title">Set Your PIN</h2>
+            <p id="lock-desc">Secure your financial data.</p>
+            <div class="pin-input-container">
+                <div class="pin-dot" id="dot-1"></div><div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div><div class="pin-dot" id="dot-4"></div>
+            </div>
+            <div class="keypad">
+                <button class="key-btn" onclick="pressKey(1)">1</button><button class="key-btn" onclick="pressKey(2)">2</button><button class="key-btn" onclick="pressKey(3)">3</button>
+                <button class="key-btn" onclick="pressKey(4)">4</button><button class="key-btn" onclick="pressKey(5)">5</button><button class="key-btn" onclick="pressKey(6)">6</button>
+                <button class="key-btn" onclick="pressKey(7)">7</button><button class="key-btn" onclick="pressKey(8)">8</button><button class="key-btn" onclick="pressKey(9)">9</button>
+                <button class="key-btn" onclick="clearPin()" style="color: var(--expense-red);">C</button><button class="key-btn" onclick="pressKey(0)">0</button>
+            </div>
+            <div class="text-btn" id="skip-btn" onclick="skipPin()">Skip & Use Without PIN</div>
+            <div class="text-btn danger-link" id="forgot-btn" style="display: none;" onclick="showRecovery()">Forgot PIN?</div>
+        </div>
+
+        <div id="security-section" class="security-box">
+            <h2 id="sec-title">Security Setup</h2>
+            <p id="sec-desc">What is your favorite movie or song?</p>
+            <input type="text" id="sec-answer" placeholder="Your answer...">
+            <button onclick="submitSecurity()" id="sec-submit-btn">Save & Open App</button>
+            <div class="text-btn danger-link" onclick="hardReset()">Forgot Everything? Reset App</div>
+        </div>
+    </div>
+
+    <div class="dashboard" id="main-dashboard">
+        <div class="header">
+            <h1>Executive Wealth</h1>
+            <p style="color: var(--text-light); font-size: 13px; margin-top: 5px;">Track your net worth & cash flow</p>
+        </div>
+        
+        <div class="settings-row">
+            <select id="currency-select" onchange="changeCurrency()">
+                <option value="$">USD ($)</option>
+                <option value="€">EUR (€)</option>
+                <option value="£">GBP (£)</option>
+            </select>
+            <button onclick="exportCSV()">📥 Export CSV</button>
+            <button onclick="openLockSettings()" id="lock-toggle-btn">🔒 Setup PIN</button>
+            <button onclick="hardReset()" style="color: var(--expense-red); border-color: #4A1A1A;">⚠️ Erase Data</button>
+        </div>
+        
+        <div class="balance-card">
+            <div class="balance-title">Net Balance</div>
+            <div class="balance-amount" id="total-balance">$0.00</div>
+        </div>
+
+        <div class="summary-row">
+            <div class="summary-box income">
+                <div class="title">Income</div>
+                <div class="amount" id="total-income">+$0.00</div>
+            </div>
+            <div class="summary-box expense">
+                <div class="title">Expenses</div>
+                <div class="amount" id="total-expense">-$0.00</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <input type="date" id="t-date" title="Select Transaction Date">
+            <input type="text" id="t-desc" placeholder="Desc (e.g., Salary, Rent)">
+            <input type="number" id="t-amount" placeholder="Amount">
+            <select id="t-type">
+                <option value="income">Income (+)</option>
+                <option value="expense">Expense (-)</option>
+            </select>
+            <button class="add-btn" onclick="addTransaction()">Add</button>
+        </div>
+        
+        <ul class="transaction-list" id="transaction-list"></ul>
+
+        <div class="journal-container">
+            <h3>Financial Goals</h3>
+            <textarea id="finance-notes" class="journal-area" placeholder="Write down your savings targets, investment ideas, or debts... (Auto-saves)"></textarea>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- Security & Auto-Lock Module --- */
+        let savedPin = localStorage.getItem('finance_pin'), skippedPin = localStorage.getItem('finance_pin_skipped'), savedSec = localStorage.getItem('finance_sec_answer');
+        let currentInput = "", isSetting = !savedPin && !skippedPin, isRecovery = false, tempPin = "";
+
+        /* --- Currency Module --- */
+        let currentCurrency = localStorage.getItem('finance_currency') || '$';
+
+        window.onload = function() {
+            // ضبط التاريخ الافتراضي
+            document.getElementById('t-date').valueAsDate = new Date();
+            // ضبط العملة الافتراضية
+            document.getElementById('currency-select').value = currentCurrency;
+
+            if (skippedPin === 'true' && !savedPin) unlock(); 
+            else if (savedPin) { setupLoginView(); }
+            resetIdleTimer();
+            document.getElementById('finance-notes').value = localStorage.getItem('finance_notes_data') || '';
+            updateDashboard();
+        };
+
+        function setupLoginView() {
+            isSetting = false; 
+            document.getElementById('lock-title').innerText = "Welcome Back"; 
+            document.getElementById('skip-btn').style.display="none"; 
+            document.getElementById('forgot-btn').style.display="block";
+            document.getElementById('pin-section').style.display = "block";
+            document.getElementById('security-section').style.display = "none";
+        }
+
+        function pressKey(n) { if(currentInput.length < 4) { currentInput+=n; updateDots(); if(currentInput.length===4) setTimeout(check, 200); } }
+        function updateDots() { for(let i=1; i<=4; i++) document.getElementById('dot-'+i).className = i<=currentInput.length ? 'pin-dot filled' : 'pin-dot'; }
+        function clearPin() { currentInput = ""; updateDots(); }
+        function skipPin() { localStorage.setItem('finance_pin_skipped', 'true'); unlock(); }
+
+        function check() {
+            if(isSetting) { tempPin = currentInput; document.getElementById('pin-section').style.display='none'; document.getElementById('security-section').style.display='flex'; }
+            else { if(currentInput === savedPin) unlock(); else { alert("Wrong PIN"); clearPin(); } }
+        }
+
+        function submitSecurity() {
+            let ans = document.getElementById('sec-answer').value.trim().toLowerCase();
+            if(!ans) return;
+            if(isSetting) { localStorage.setItem('finance_pin', tempPin); localStorage.setItem('finance_sec_answer', ans); localStorage.removeItem('finance_pin_skipped'); savedPin = tempPin; savedSec = ans; unlock(); }
+            else if(isRecovery) { if(ans === savedSec) { alert("PIN Removed."); localStorage.removeItem('finance_pin'); localStorage.setItem('finance_pin_skipped', 'true'); location.reload(); } else alert("Wrong answer."); }
+        }
+
+        function showRecovery() { isRecovery = true; document.getElementById('pin-section').style.display='none'; document.getElementById('security-section').style.display='flex'; document.getElementById('sec-title').innerText="Recovery"; document.getElementById('sec-submit-btn').innerText="Unlock App"; }
+        function unlock() { document.getElementById('lock-screen').style.display='none'; document.getElementById('main-dashboard').style.display='block'; updateDashboard(); resetIdleTimer(); }
+        
+        function hardReset() { 
+            if(confirm("Are you sure? This will delete ALL financial records, notes, and PIN permanently!")) { 
+                localStorage.clear(); location.reload(); 
+            } 
+        }
+        
+        function openLockSettings() { if(savedPin) location.reload(); else { isSetting = true; clearPin(); document.getElementById('lock-screen').style.display='flex'; document.getElementById('main-dashboard').style.display='none'; } }
+
+        /* --- Auto-Lock Module --- */
+        let idleTimer;
+        function lockNow() {
+            if (savedPin && document.getElementById('main-dashboard').style.display === 'block') {
+                document.getElementById('main-dashboard').style.display = 'none';
+                document.getElementById('lock-screen').style.display = 'flex';
+                clearPin(); setupLoginView();
+            }
+        }
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(lockNow, 300000); // 5 mins
+        }
+        window.addEventListener('mousemove', resetIdleTimer); window.addEventListener('keypress', resetIdleTimer); window.addEventListener('scroll', resetIdleTimer); window.addEventListener('touchstart', resetIdleTimer); window.addEventListener('click', resetIdleTimer);
+        document.addEventListener('visibilitychange', function() { if (document.hidden) lockNow(); });
+
+        /* --- Auto-Save Notes --- */
+        document.getElementById('finance-notes').addEventListener('input', function() {
+            localStorage.setItem('finance_notes_data', this.value);
+            resetIdleTimer();
+        });
+
+        /* --- Finance Logic --- */
+        let transactions = JSON.parse(localStorage.getItem('finance_data') || '[]');
+
+        function changeCurrency() {
+            currentCurrency = document.getElementById('currency-select').value;
+            localStorage.setItem('finance_currency', currentCurrency);
+            updateDashboard();
+        }
+
+        function addTransaction() {
+            let desc = document.getElementById('t-desc').value;
+            let amount = parseFloat(document.getElementById('t-amount').value);
+            let type = document.getElementById('t-type').value;
+            let rawDate = document.getElementById('t-date').value;
+
+            if(!desc || isNaN(amount) || !rawDate) return;
+
+            let dateObj = new Date(rawDate);
+            let formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            transactions.push({ id: Date.now(), desc, amount, type, date: formattedDate, timestamp: dateObj.getTime() });
+            
+            saveData(); 
+            document.getElementById('t-desc').value = ''; 
+            document.getElementById('t-amount').value = '';
+            updateDashboard();
+        }
+
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveData(); updateDashboard();
+        }
+
+        function saveData() { localStorage.setItem('finance_data', JSON.stringify(transactions)); }
+
+        function updateDashboard() {
+            let income = 0, expense = 0;
+            let list = document.getElementById('transaction-list');
+            list.innerHTML = '';
+
+            let sortedTransactions = [...transactions].sort((a, b) => b.id - a.id);
+
+            sortedTransactions.forEach(t => {
+                if(t.type === 'income') income += t.amount;
+                else expense += t.amount;
+
+                let isIncome = t.type === 'income';
+                let html = `
+                    <li class="transaction-item">
+                        <div class="transaction-info">
+                            <span class="t-name">${t.desc}</span>
+                            <span class="t-date">${t.date}</span>
+                        </div>
+                        <div class="transaction-amount">
+                            <span class="${isIncome ? 't-income' : 't-expense'}">${isIncome ? '+' : '-'}${currentCurrency}${t.amount.toLocaleString()}</span>
+                            <button class="delete-btn" onclick="deleteTransaction(${t.id})">×</button>
+                        </div>
+                    </li>
+                `;
+                list.innerHTML += html;
+            });
+
+            let balance = income - expense;
+            document.getElementById('total-balance').innerText = `${currentCurrency}${balance.toLocaleString()}`;
+            document.getElementById('total-income').innerText = `+${currentCurrency}${income.toLocaleString()}`;
+            document.getElementById('total-expense').innerText = `-${currentCurrency}${expense.toLocaleString()}`;
+        }
+
+        /* --- Export to CSV Logic --- */
+        function exportCSV() {
+            if (transactions.length === 0) {
+                alert("No transactions to export yet!");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Date,Description,Type,Amount\n"; 
+            transactions.forEach(t => {
+                let row = `"${t.date}","${t.desc}","${t.type}","${t.amount}"`;
+                csvContent += row + "\n";
+            });
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Executive_Wealth_Tracker.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
